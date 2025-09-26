@@ -1,0 +1,126 @@
+---
+title: "MATH 315 Miniproject 1: Sollow-Swan ODE Numerical Analysis Using Euler's Method"
+author: "Ethan Thomas and Paul Quidu"
+date: "Due September 28, 2025"
+output: pdf_document
+geometry: margin=1in
+header-includes:
+  - \usepackage{titling}         # for cover page spacing
+  - \usepackage{pdfpages}        # to include handwritten PDFs
+  - \pretitle{\begin{center}\vspace*{\fill}\Huge}
+  - \posttitle{\par\end{center}\vspace{\fill}}
+  - \preauthor{\begin{center}\LARGE}
+  - \postauthor{\end{center}}
+  - \predate{\begin{center}\Large}
+  - \postdate{\end{center}}
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+\newpage
+
+##Description of Chosen ODE and Parameters:
+
+Solow-Swan ODE Overview The Solow-Swan model uses the following
+differential equation to describe capital accumulation per effective
+worker in a closed economy: $$
+k'(t) = s\,f\!\big(k(t)\big) - (\delta + n + g)\,k(t)
+$$
+
+Where:\
+- $k(t)$ = capital per effective worker at time $t$ This variable tracks
+how much capital there is for each unit of “effective” labor in the
+economy\
+- $s$ = savings rate: The fraction of output that is saved and invested
+instead of consumed\
+- $f(k(t))$ = output per effective worker given $k(t)$: Specifies the
+amount of output produced per effective worker given capital per
+effective worker; often a Cobb-Douglas form such as $f(k)$ = $k^\alpha$,
+with 0 \< $\alpha$ \< 1 is used \
+- $\delta$ = depreciation rate\
+- $n$ = population growth rate\
+- $g$ = technology growth rate
+
+## Step size is 1/12
+
+```{r}
+# Parameters
+alpha <- 0.31
+s <- 0.252
+delta_n_g <- 0.064
+h <- 1/12       # step size (1 month)
+n_steps <- 12   # 12 steps (equal to 1 year in time)
+t0 <- 0
+k0 <- 1.0       # initial capital per effective worker (choose your IC)
+
+# Function for RHS of ODE
+f <- function(k) {
+  s * k^alpha - delta_n_g * k
+}
+
+# Storage
+t_vals <- numeric(n_steps + 1)
+k_vals <- numeric(n_steps + 1)
+t_vals[1] <- t0
+k_vals[1] <- k0
+
+# Euler method loop
+for (i in 1:n_steps) {
+  k_vals[i+1] <- k_vals[i] + h * f(k_vals[i])
+  t_vals[i+1] <- t_vals[i] + h
+}
+
+# Combine results into a data frame
+results <- data.frame(
+  time = t_vals,
+  k = k_vals
+)
+
+print(results)
+
+```
+
+## Step size is 1/365 
+
+```{r}
+# Parameters
+alpha <- 0.31
+s <- 0.252
+delta_n_g <- 0.064
+h <- 1/365       # step size (one day)
+n_steps <- 365   # 365 steps (equal to 1 year in time)
+t0 <- 0
+k0 <- 1.0       # initial capital per effective worker (choose your IC)
+
+# Function for RHS of ODE
+f <- function(k) {
+  s * k^alpha - delta_n_g * k
+}
+
+# Storage
+t_vals <- numeric(n_steps + 1)
+k_vals <- numeric(n_steps + 1)
+t_vals[1] <- t0
+k_vals[1] <- k0
+
+# Euler method loop
+for (i in 1:n_steps) {
+  k_vals[i+1] <- k_vals[i] + h * f(k_vals[i])
+  t_vals[i+1] <- t_vals[i] + h
+}
+
+# Combine results into a data frame
+results <- data.frame(
+  time = t_vals,
+  k = k_vals
+)
+
+print(results)
+
+```
+
