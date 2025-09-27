@@ -1,7 +1,7 @@
 ---
 title: "MATH 315 Miniproject 1: Sollow-Swan ODE Numerical Analysis Using Euler's Method"
 author: "Ethan Thomas and Paul Quidu"
-date: "Due September 28, 2025"
+date: "September 28, 2025"
 output: pdf_document
 geometry: margin=1in
 header-includes:
@@ -19,108 +19,227 @@ editor_options:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(
+  echo = FALSE,    # Hide code
+  warning = FALSE, # Hide warnings
+  message = FALSE  # Hide messages
+)
 ```
 
 \newpage
 
-##Description of Chosen ODE and Parameters:
+### Description of Chosen ODE and Parameters
 
-Solow-Swan ODE Overview The Solow-Swan model uses the following
-differential equation to describe capital accumulation per effective
-worker in a closed economy: $$
+The Solow-Swan model uses the following differential equation to describe capital accumulation per effective
+worker in a closed economy:  
+
+$$
 k'(t) = s\,f\!\big(k(t)\big) - (\delta + n + g)\,k(t)
 $$
 
 Where:\
-- $k(t)$ = capital per effective worker at time $t$ This variable tracks
-how much capital there is for each unit of “effective” labor in the
-economy\
-- $s$ = savings rate: The fraction of output that is saved and invested
-instead of consumed\
-- $f(k(t))$ = output per effective worker given $k(t)$: Specifies the
-amount of output produced per effective worker given capital per
-effective worker; often a Cobb-Douglas form such as $f(k)$ = $k^\alpha$,
-with 0 \< $\alpha$ \< 1 is used \
+- $k(t)$ = capital per effective worker at time $t$ (tracks how much capital there is for each unit of “effective” labor in the economy)\
+- $s$ = savings rate: The fraction of output that is saved and invested instead of consumed\
+- $f(k(t))$ = output per effective worker given $k(t)$: Specifies the amount of output produced per effective worker given capital per effective worker; often a Cobb-Douglas form such as $f(k) = k^\alpha$, with $0 < \alpha < 1$\
 - $\delta$ = depreciation rate\
 - $n$ = population growth rate\
-- $g$ = technology growth rate
+- $g$ = technology growth rate\
 
-## Step size is 1/12
+For the purpose of our study we will analyse the Solow-Swan ODE for Canada with the following assumptions from Statistics Canada:  
+
+- $\alpha = 0.31$  
+- $\delta = 5\%$  
+- $s = 25.2\%$  
+- $n = 3\%$  
+- $g = 0.85\%$
+
+\newpage
+
+### Numerical Approximation Using Euler’s Method
+
+Euler’s method approximates solutions to ordinary differential equations using the iterative formula:  
+
+$$
+k_{n+1} = k_n + h \, f(t_n, k_n)
+$$  
+
+where $h$ is the step size, $k_n$ is the approximation of $k(t_n)$, and $f(t,k)$ is the right-hand side of the ODE.  
+
+- We chose a step size of **$h = 1$ (yearly)** to capture the dynamics on a rough scale and compare with a more precise simulation.  
+- We also chose a step size of **$h = \tfrac{1}{365}$ (daily)** to approximate the continuous dynamics of the model much more closely.  
+- The **initial condition** was set as $k(0) = 1$ (starting point (0,1)), representing an arbitrary normalized unit of capital per effective worker at the beginning of the simulation.\
 
 ```{r}
+# Load libraries
+library(ggplot2)
+
 # Parameters
 alpha <- 0.31
 s <- 0.252
-delta_n_g <- 0.064
-h <- 1/12       # step size (1 month)
-n_steps <- 12   # 12 steps (equal to 1 year in time)
+delta <- 0.05
+n <- 0.03
+g <- 0.0085
+delta_n_g <- delta + n + g
 t0 <- 0
-k0 <- 1.0       # initial capital per effective worker (choose your IC)
+k0 <- 1.0
+n_years <- 50
 
-# Function for RHS of ODE
-f <- function(k) {
-  s * k^alpha - delta_n_g * k
-}
+f <- function(k) { s * k^alpha - delta_n_g * k }
 
-# Storage
-t_vals <- numeric(n_steps + 1)
-k_vals <- numeric(n_steps + 1)
-t_vals[1] <- t0
-k_vals[1] <- k0
-
-# Euler method loop
-for (i in 1:n_steps) {
-  k_vals[i+1] <- k_vals[i] + h * f(k_vals[i])
-  t_vals[i+1] <- t_vals[i] + h
-}
-
-# Combine results into a data frame
-results <- data.frame(
-  time = t_vals,
-  k = k_vals
+# Step sizes
+steps <- list(
+  "Yearly (h=1)" = 1,
+  "Daily (h=1/365)" = 1/365
 )
 
-print(results)
+sim_data <- data.frame(time = numeric(), k = numeric(), Method = character())
 
+for (name in names(steps)) {
+  h <- steps[[name]]
+  n_steps <- n_years / h
+  t_vals <- numeric(n_steps + 1)
+  k_vals <- numeric(n_steps + 1)
+  t_vals[1] <- t0
+  k_vals[1] <- k0
+  
+  for (i in 1:n_steps) {
+    k_vals[i+1] <- k_vals[i] + h * f(k_vals[i])
+    t_vals[i+1] <- t_vals[i] + h
+  }
+  
+  sim_data <- rbind(sim_data,
+                    data.frame(time = t_vals, k = k_vals, Method = name))
+}
+
+# Plot
+library("ggplot2")
+library("ggthemes")
+library(extrafont)
+library(dplyr)
+
+ggplot(sim_data, aes(x = time, y = k, color = Method)) +
+  geom_line(linewidth = 0.3) +
+  labs(title = "Euler Method Approximation for Solow-Swan ODE",
+       x = "Time (years)", y = "Capital per Effective Worker k(t)") +
+  theme_tufte() +
+  theme (
+    axis.line = element_line(color = "black", size = 0.5), # add back axis lines
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+    axis.title = element_text(size = 10),
+    axis.text = element_text(size = 12),
+    legend.title = element_text(size = 12),
+    legend.text = element_text(size = 11),
+    legend.position = "bottom",
+    text = element_text(size=10, family="Times")
+  ) +
+  scale_color_manual(values = c("Yearly (h=1)"="red", "Daily (h=1/365)"="blue"))
 ```
 
-## Step size is 1/365 
+\
+As we can see in the first plot, the difference between the yearly step ($h = 1$) and the daily step ($h = 1/365$) is very small. This is because the Solow-Swan ODE is relatively smooth over time, and even a yearly step captures the overall trend of capital accumulation with good accuracy.  
+
+To better illustrate the subtle differences between the two approximations, we next zoom in around the 25th year, where we can clearly observe how the step size affects the Euler method's numerical solution.
+
+
 
 ```{r}
-# Parameters
-alpha <- 0.31
-s <- 0.252
-delta_n_g <- 0.064
-h <- 1/365       # step size (one day)
-n_steps <- 365   # 365 steps (equal to 1 year in time)
-t0 <- 0
-k0 <- 1.0       # initial capital per effective worker (choose your IC)
+target_time <- 25
 
-# Function for RHS of ODE
-f <- function(k) {
-  s * k^alpha - delta_n_g * k
-}
+# Get closest values to 25.5 for each method
+approx_vals <- sim_data %>%
+  group_by(Method) %>%
+  slice(which.min(abs(time - target_time))) %>%
+  ungroup()
 
-# Storage
-t_vals <- numeric(n_steps + 1)
-k_vals <- numeric(n_steps + 1)
-t_vals[1] <- t0
-k_vals[1] <- k0
+# Calculate difference
+diff_val <- diff(approx_vals$k)
 
-# Euler method loop
-for (i in 1:n_steps) {
-  k_vals[i+1] <- k_vals[i] + h * f(k_vals[i])
-  t_vals[i+1] <- t_vals[i] + h
-}
+# --- Plot zoomed around that point ---
+# Define zoom ranges based on values found
+y_min <- min(approx_vals$k) - abs(diff_val) * 1.5
+y_max <- max(approx_vals$k) + abs(diff_val) * 1.5
+x_min <- target_time - 0.05   # ~18 days before
+x_max <- target_time + 0.05   # ~18 days after
 
-# Combine results into a data frame
-results <- data.frame(
-  time = t_vals,
-  k = k_vals
-)
-
-print(results)
-
+ggplot(sim_data, aes(x = time, y = k, color = Method)) +
+  geom_line(linewidth = 0.6) +
+  geom_point(data = approx_vals, aes(x = time, y = k), size = 3, shape = 21, fill = "white") +
+  geom_segment(aes(x = target_time, xend = target_time, 
+                   y = approx_vals$k[1], yend = approx_vals$k[2]),
+               color = "black", linetype = "dashed", linewidth = 0.5) +
+  geom_text(aes(x = target_time + 0.01, 
+                y = mean(approx_vals$k), 
+                label = paste0("Diff = ", signif(diff_val, 4))),
+            color = "black", size = 3, hjust = 0) +
+  labs(title = paste0("Zoom on Year 25: Difference = ", signif(diff_val, 4)),
+       x = "Time (years)", y = "Capital per Effective Worker k(t)") +
+  theme_tufte() +
+  theme(
+    axis.line = element_line(color = "black", size = 0.5),
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+    axis.title = element_text(size = 10),
+    axis.text = element_text(size = 12),
+    legend.title = element_text(size = 12),
+    legend.text = element_text(size = 11),
+    legend.position = "bottom",
+    text = element_text(size = 10, family = "Times")
+  ) +
+  scale_color_manual(values = c("Yearly (h=1)" = "red", "Daily (h=1/365)" = "blue")) +
+  coord_cartesian(xlim = c(x_min, x_max), ylim = c(y_min, y_max))
 ```
+
+\newpage
+
+### Steady-State Analysis and Dynamics
+
+The Solow-Swan model has a **steady-state (equilibrium) point** where capital per effective worker does not change, i.e., $k'(t) = 0$.  
+From the ODE:  
+
+$$
+k'(t) = s\,k^\alpha - (\delta + n + g) k = 0
+$$  
+
+Solving for $k^*$ gives the **stable fixed point**:  
+
+$$
+k^* = \left(\frac{s}{\delta + n + g}\right)^{\frac{1}{1-\alpha}}
+$$  
+
+This represents the long-term level of capital per effective worker that the economy converges to.
+
+Below, we illustrate the dynamics of $k(t)$ around the steady-state. The arrows indicate whether $k(t)$ increases or decreases, showing the **stability** of the fixed point.
+\newline
+
+```{r}
+# Steady-state calculation
+k_star <- (s / delta_n_g)^(1 / (1 - alpha))
+
+# Generate a range of k values for dynamics visualization
+k_vals_dyn <- seq(0, 2 * k_star, length.out = 200)
+k_deriv <- s * k_vals_dyn^alpha - delta_n_g * k_vals_dyn
+
+# Plot the dynamics and fixed point
+ggplot(data.frame(k = k_vals_dyn, k_prime = k_deriv), aes(x = k, y = k_prime)) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "black") +
+  geom_line(color = "blue", size = 1) +
+  geom_point(aes(x = k_star, y = 0), color = "red", size = 3) +
+  geom_segment(aes(x = k_star * 0.5, xend = k_star * 0.75, 
+                   y = s * (k_star * 0.5)^alpha - delta_n_g * (k_star * 0.5), 
+                   yend = s * (k_star * 0.75)^alpha - delta_n_g * (k_star * 0.75)), 
+               arrow = arrow(length = unit(0.2, "cm")), color = "black") +
+  geom_segment(aes(x = k_star * 1.5, xend = k_star * 1.25, 
+                   y = s * (k_star * 1.5)^alpha - delta_n_g * (k_star * 1.5), 
+                   yend = s * (k_star * 1.25)^alpha - delta_n_g * (k_star * 1.25)), 
+               arrow = arrow(length = unit(0.2, "cm")), color = "black") +
+  annotate("text", x = k_star, y = 0.05, label = "Stable fixed point", color = "red", hjust = -0.1) +
+  labs(title = "Dynamics of Solow-Swan ODE and Stable Fixed Point",
+       x = "Capital per Effective Worker k", y = expression(k*"'")) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold")
+  )
+```
+
+
+
 
