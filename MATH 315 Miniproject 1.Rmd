@@ -234,9 +234,16 @@ ggplot(data.frame(k = k_vals_dyn, k_prime = k_deriv), aes(x = k, y = k_prime)) +
   annotate("text", x = k_star, y = 0.05, label = "Stable fixed point", color = "red", hjust = -0.1) +
   labs(title = "Dynamics of Solow-Swan ODE and Stable Fixed Point",
        x = "Capital per Effective Worker k", y = expression(k*"'")) +
-  theme_minimal(base_size = 12) +
+  theme_tufte() +
   theme(
-    plot.title = element_text(hjust = 0.5, face = "bold")
+    axis.line = element_line(color = "black", size = 0.5),
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+    axis.title = element_text(size = 10),
+    axis.text = element_text(size = 12),
+    legend.title = element_text(size = 12),
+    legend.text = element_text(size = 11),
+    legend.position = "bottom",
+    text = element_text(size = 10, family = "Times")
   )
 ```
 
