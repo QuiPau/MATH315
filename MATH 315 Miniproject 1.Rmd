@@ -45,7 +45,7 @@ Where:\
 - $n$ = population growth rate\
 - $g$ = technology growth rate\
 
-For the purpose of our study we will analyse the Solow-Swan ODE for Canada with the following assumptions from Statistics Canada:  
+For the purpose of our study we will analyse the Solow-Swan ODE for Canada. These parameter values are based on 2024 "Statistics Canada" data, $\alpha$ and $\delta$ are based on average for developed countries.
 
 - $\alpha = 0.31$  
 - $\delta = 5\%$  
@@ -142,7 +142,7 @@ To better illustrate the subtle differences between the two approximations, we n
 
 
 
-```{r}
+```{r fig.width=6, fig.height=4}
 target_time <- 25
 
 # Get closest values to 25.5 for each method
@@ -176,16 +176,47 @@ ggplot(sim_data, aes(x = time, y = k, color = Method)) +
   theme_tufte() +
   theme(
     axis.line = element_line(color = "black", size = 0.5),
-    plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+    plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
     axis.title = element_text(size = 10),
-    axis.text = element_text(size = 12),
-    legend.title = element_text(size = 12),
-    legend.text = element_text(size = 11),
+    axis.text = element_text(size = 10),
+    legend.title = element_text(size = 11),
+    legend.text = element_text(size = 10, margin = margin(b = 0)),
     legend.position = "bottom",
     text = element_text(size = 10, family = "Times")
   ) +
   scale_color_manual(values = c("Yearly (h=1)" = "red", "Daily (h=1/365)" = "blue")) +
   coord_cartesian(xlim = c(x_min, x_max), ylim = c(y_min, y_max))
+```
+
+### R function for Euler's method
+
+```{r, eval=FALSE, echo=TRUE}
+f <- function(k) { s * k^alpha - delta_n_g * k }
+
+# Step sizes
+steps <- list(
+  "Yearly (h=1)" = 1,
+  "Daily (h=1/365)" = 1/365
+)
+
+sim_data <- data.frame(time = numeric(), k = numeric(), Method = character())
+
+for (name in names(steps)) {
+  h <- steps[[name]]
+  n_steps <- n_years / h
+  t_vals <- numeric(n_steps + 1)
+  k_vals <- numeric(n_steps + 1)
+  t_vals[1] <- t0
+  k_vals[1] <- k0
+  
+  for (i in 1:n_steps) {
+    k_vals[i+1] <- k_vals[i] + h * f(k_vals[i])
+    t_vals[i+1] <- t_vals[i] + h
+  }
+  
+  sim_data <- rbind(sim_data,
+                    data.frame(time = t_vals, k = k_vals, Method = name))
+}
 ```
 
 \newpage
@@ -199,7 +230,7 @@ $$
 k'(t) = s\,k^\alpha - (\delta + n + g) k = 0
 $$  
 
-Solving for $k^*$ gives the **stable fixed point**:  
+Solving for $k^*$ gives the **stable steady point**:  
 
 $$
 k^* = \left(\frac{s}{\delta + n + g}\right)^{\frac{1}{1-\alpha}}
@@ -207,10 +238,50 @@ $$
 
 This represents the long-term level of capital per effective worker that the economy converges to.
 
-Below, we illustrate the dynamics of $k(t)$ around the steady-state. The arrows indicate whether $k(t)$ increases or decreases, showing the **stability** of the fixed point.
+**Stability check of \(k^*\)**
+
+Let
+\[
+F(k)=s k^\alpha - (\delta+n+g)k,
+\]
+so the steady state \(k^*\) satisfies
+\[
+s(k^*)^\alpha=(\delta+n+g)k^* \quad\Longrightarrow\quad s (k^*)^{\alpha-1}=\delta+n+g.
+\]
+Differentiate:
+\[
+F'(k)=s\alpha k^{\alpha-1} - (\delta+n+g).
+\]
+Evaluate at \(k^*\) and use the steady-state identity:
+\[
+F'(k^*)=s\alpha (k^*)^{\alpha-1} - (\delta+n+g)
+=\alpha(\delta+n+g) - (\delta+n+g)
+=(\alpha-1)(\delta+n+g).
+\]
+Because \(0<\alpha<1\) and \(\delta+n+g>0\), we have \(F'(k^*)<0\). Hence \(k^*\) is a stable steady point. 
+
+Solving for $k^*$ gives the **stable steady point**:  
+
+$$
+k^* = \left(\frac{s}{\delta + n + g}\right)^{\frac{1}{1-\alpha}}
+$$  
+
+This represents the long-term level of capital per effective worker that the economy converges to.
+
+Using the Canadian parameter values ($s=0.252$, $\delta+n+g=0.0885$, $\alpha=0.31$), we compute  
+
+\[
+k^* = \left(\frac{0.252}{0.0885}\right)^{\tfrac{1}{1-0.31}} \approx 4.56.
+\]
+
+This means that, in the long run, the economy converges to about **4.56 units of capital per effective worker**.\
+At this point, investment exactly offsets depreciation, population growth, and technological progress, so $k(t)$ remains constant.
+
+
+Below, we illustrate the dynamics of $k(t)$ around the steady-state. The arrows indicate whether $k(t)$ increases or decreases, showing the **stability** of the steady point.
 \newline
 
-```{r}
+```{r fig.align= "center", fig.width=5.5, fig.height=3}
 # Steady-state calculation
 k_star <- (s / delta_n_g)^(1 / (1 - alpha))
 
@@ -218,11 +289,11 @@ k_star <- (s / delta_n_g)^(1 / (1 - alpha))
 k_vals_dyn <- seq(0, 2 * k_star, length.out = 200)
 k_deriv <- s * k_vals_dyn^alpha - delta_n_g * k_vals_dyn
 
-# Plot the dynamics and fixed point
+# Plot the dynamics and steady point
 ggplot(data.frame(k = k_vals_dyn, k_prime = k_deriv), aes(x = k, y = k_prime)) +
   geom_hline(yintercept = 0, linetype = "dashed", color = "black") +
-  geom_line(color = "blue", size = 1) +
-  geom_point(aes(x = k_star, y = 0), color = "red", size = 3) +
+  geom_line(color = "black", size = 0.6) +
+  geom_point(aes(x = k_star, y = 0), color = "red", size = 2) +
   geom_segment(aes(x = k_star * 0.5, xend = k_star * 0.75, 
                    y = s * (k_star * 0.5)^alpha - delta_n_g * (k_star * 0.5), 
                    yend = s * (k_star * 0.75)^alpha - delta_n_g * (k_star * 0.75)), 
@@ -231,21 +302,32 @@ ggplot(data.frame(k = k_vals_dyn, k_prime = k_deriv), aes(x = k, y = k_prime)) +
                    y = s * (k_star * 1.5)^alpha - delta_n_g * (k_star * 1.5), 
                    yend = s * (k_star * 1.25)^alpha - delta_n_g * (k_star * 1.25)), 
                arrow = arrow(length = unit(0.2, "cm")), color = "black") +
-  annotate("text", x = k_star, y = 0.05, label = "Stable fixed point", color = "red", hjust = -0.1) +
-  labs(title = "Dynamics of Solow-Swan ODE and Stable Fixed Point",
+  annotate("text", x = k_star, y = 0.05, label = "Stable steady point", color = "red", hjust = -0.1, size = 3) +
+  labs(title = "Dynamics of Solow-Swan ODE and Stable Steady Point",
        x = "Capital per Effective Worker k", y = expression(k*"'")) +
   theme_tufte() +
   theme(
     axis.line = element_line(color = "black", size = 0.5),
-    plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+    plot.title = element_text(hjust = 0.6, size = 12, face = "bold", margin = margin(b = 15)),
     axis.title = element_text(size = 10),
-    axis.text = element_text(size = 12),
+    axis.text = element_text(size = 10),
     legend.title = element_text(size = 12),
     legend.text = element_text(size = 11),
     legend.position = "bottom",
-    text = element_text(size = 10, family = "Times")
+    text = element_text(size = 10, family = "Times"),
   )
 ```
+\
+From the dynamics plot, we can see that the steady state $k^*$ is **stable**.  
+
+- **When $k < k^*$:** The curve lies above the $x$-axis, so $k'(t) > 0$. This means capital per effective worker increases over time, pushing the system back toward $k^*$.  
+
+- **When $k > k^*$:** The curve lies below the $x$-axis, so $k'(t) < 0$. In this case, capital per effective worker decreases, again pulling the system back toward $k^*$.  
+
+Thus, no matter whether the economy starts with “too little” or “too much” capital per effective worker, the dynamics naturally drive it back to the steady state.  
+
+Economically, this means the Solow-Swan model predicts **long-run convergence**: different initial conditions for $k(0)$ do not matter, since the economy eventually settles at the same steady-state capital stock per effective worker, determined solely by parameters $s$, $\alpha$, $\delta$, $n$, and $g$.
+
 
 
 
