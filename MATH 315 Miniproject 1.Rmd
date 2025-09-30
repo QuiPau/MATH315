@@ -1,8 +1,10 @@
 ---
-title: "MATH 315 Miniproject 1: Sollow-Swan ODE Numerical Analysis Using Euler's Method"
+title: "MATH 315 Miniproject 1: Solow-Swan ODE Numerical Analysis Using Euler's Method"
 author: "Ethan Thomas and Paul Quidu"
 date: "September 28, 2025"
 output: pdf_document
+bibliography: refs.bib
+csl: mla.csl
 geometry: margin=1in
 header-includes:
   - \usepackage{titling}         # for cover page spacing
@@ -28,52 +30,77 @@ knitr::opts_chunk$set(
 
 \newpage
 
-### Description of Chosen ODE and Parameters
+## Description of Chosen ODE and Parameters
 
-The Solow-Swan model uses the following differential equation to describe capital accumulation per effective
-worker in a closed economy:  
+The Solow-Swan model uses the following differential equation to
+describe capital accumulation per effective worker in a closed economy:
 
 $$
 k'(t) = s\,f\!\big(k(t)\big) - (\delta + n + g)\,k(t)
 $$
 
 Where:\
-- $k(t)$ = capital per effective worker at time $t$ (tracks how much capital there is for each unit of “effective” labor in the economy)\
-- $s$ = savings rate: The fraction of output that is saved and invested instead of consumed\
-- $f(k(t))$ = output per effective worker given $k(t)$: Specifies the amount of output produced per effective worker given capital per effective worker; often a Cobb-Douglas form such as $f(k) = k^\alpha$, with $0 < \alpha < 1$\
-- $\delta$ = depreciation rate\
-- $n$ = population growth rate\
-- $g$ = technology growth rate\
+- $k(t)$ = capital per effective worker at time $t$ (tracks how much
+capital there is for each unit of “effective” labor in the economy)\
+- $f(k(t))$ = output per effective worker given $k(t)$: Specifies the
+amount of output produced per effective worker given capital per
+effective worker; often a Cobb-Douglas form such as $f(k) = k^\alpha$, -
+$s$ = savings rate: The fraction of output that is saved and invested
+instead of consumed\
+with $0 < \alpha < 1$\
+- $\delta$ = depreciation rate expressed as an annual percentage\
+- $n$ = population growth rate over one year expressed as a percentage
+change from the initial year\
+- $g$ = technology growth rate, reported as an annual percentage and
+interpreted as the annual growth rate of technology that affects labour\
+- $\alpha$ = Output Elasticity of Capital in the Cobb-Douglas function.
+It is unitless as it is interpreted as the proportion of output
+attributed to capital
 
-For the purpose of our study we will analyse the Solow-Swan ODE for Canada. These parameter values are based on 2024 "Statistics Canada" data, $\alpha$ and $\delta$ are based on average for developed countries.
+For the purpose of our study we will analyse the Solow-Swan ODE for
+Canada. These parameter values are based on 2024 "Statistics Canada"
+data, $\alpha$ and $\delta$ are based on average for developed
+countries.
 
-- $\alpha = 0.31$  
-- $\delta = 5\%$  
-- $s = 25.2\%$  
-- $n = 3\%$  
-- $g = 0.85\%$
+-   $s = 25.2\%$ 
+-   $\delta = 5\%$
+-   $n = 3\%$ 
+-   $g = 0.85\%$
+-   $\alpha = 0.31$\
+
+These are the sources for the parameters above, MLA formatted citations
+are at the bottom of the document
+
+[@ceic_gross_savings] [@statcan_daily_250319a] [@PBO_LEG_2425_005]
+[@cobb_douglas_1928]
 
 \newpage
 
-### Numerical Approximation Using Euler’s Method
+## Numerical Approximation Using Euler’s Method
 
-Euler’s method approximates solutions to ordinary differential equations using the iterative formula:  
+Euler’s method approximates solutions to ordinary differential equations
+using the iterative formula:
 
 $$
 k_{n+1} = k_n + h \, f(t_n, k_n)
-$$  
+$$
 
-where $h$ is the step size, $k_n$ is the approximation of $k(t_n)$, and $f(t,k)$ is the right-hand side of the ODE.  
+where $h$ is the step size, $k_n$ is the approximation of $k(t_n)$, and
+$f(t,k)$ is the right-hand side of the ODE.
 
-- We chose a step size of **$h = 1$ (yearly)** to capture the dynamics on a rough scale and compare with a more precise simulation.  
-- We also chose a step size of **$h = \tfrac{1}{365}$ (daily)** to approximate the continuous dynamics of the model much more closely.  
-- The **initial condition** was set as $k(0) = 1$ (starting point (0,1)), representing an arbitrary normalized unit of capital per effective worker at the beginning of the simulation.\
+-   We chose a step size of $h = 1$ (yearly) to capture the dynamics on
+    a rough scale and compare with a more precise simulation.\
+-   We also chose a step size of $h = \tfrac{1}{365}$ (daily) to
+    approximate the continuous dynamics of the model much more closely.\
+-   The **initial condition** was set as $k(0) = 1$ (starting point
+    (0,1)), representing an arbitrary normalized unit of capital per
+    effective worker at the beginning of the simulation.\
 
 ```{r}
 # Load libraries
 library(ggplot2)
 
-# Parameters
+# Parameters as defined above
 alpha <- 0.31
 s <- 0.252
 delta <- 0.05
@@ -136,11 +163,16 @@ ggplot(sim_data, aes(x = time, y = k, color = Method)) +
 ```
 
 \
-As we can see in the first plot, the difference between the yearly step ($h = 1$) and the daily step ($h = 1/365$) is very small. This is because the Solow-Swan ODE is relatively smooth over time, and even a yearly step captures the overall trend of capital accumulation with good accuracy.  
+As we can see in the first plot, the difference between the yearly step
+($h = 1$) and the daily step ($h = 1/365$) is very small. This is
+because the Solow-Swan ODE is relatively smooth over time, and even a
+yearly step captures the overall trend of capital accumulation with good
+accuracy.
 
-To better illustrate the subtle differences between the two approximations, we next zoom in around the 25th year, where we can clearly observe how the step size affects the Euler method's numerical solution.
-
-
+To better illustrate the subtle differences between the two
+approximations, we next zoom in around the 25th year, where we can
+clearly observe how the step size affects the Euler method's numerical
+solution.
 
 ```{r fig.width=6, fig.height=4}
 target_time <- 25
@@ -191,6 +223,18 @@ ggplot(sim_data, aes(x = time, y = k, color = Method)) +
 ### R function for Euler's method
 
 ```{r, eval=FALSE, echo=TRUE}
+# Parameters as defined above
+alpha <- 0.31
+s <- 0.252
+delta <- 0.05
+n <- 0.03
+g <- 0.0085
+delta_n_g <- delta + n + g
+t0 <- 0
+k0 <- 1.0
+n_years <- 50
+
+#Solow-Swan ODE Function Definition 
 f <- function(k) { s * k^alpha - delta_n_g * k }
 
 # Step sizes
@@ -201,14 +245,17 @@ steps <- list(
 
 sim_data <- data.frame(time = numeric(), k = numeric(), Method = character())
 
+#Initialize values for Euler's Method 
+#Has two iterations, one for each choice of step size, yearly or daily
 for (name in names(steps)) {
   h <- steps[[name]]
   n_steps <- n_years / h
-  t_vals <- numeric(n_steps + 1)
-  k_vals <- numeric(n_steps + 1)
-  t_vals[1] <- t0
-  k_vals[1] <- k0
+  t_vals <- numeric(n_steps + 1) #Initializing list for time values
+  k_vals <- numeric(n_steps + 1) #Initializing list for k values (prediction values)
+  t_vals[1] <- t0 #Initialize first element of time value list to (t0 = 0)
+  k_vals[1] <- k0 #Initialize first element of prediction value list to (k0 = 1)
   
+  #Computes Euler's method for each step size and fills the values in the list
   for (i in 1:n_steps) {
     k_vals[i+1] <- k_vals[i] + h * f(k_vals[i])
     t_vals[i+1] <- t_vals[i] + h
@@ -221,65 +268,64 @@ for (name in names(steps)) {
 
 \newpage
 
-### Steady-State Analysis and Dynamics
+## Steady-State Analysis and Dynamics
 
-The Solow-Swan model has a **steady-state (equilibrium) point** where capital per effective worker does not change, i.e., $k'(t) = 0$.  
-From the ODE:  
+The Solow-Swan model has a **steady-state (equilibrium) point** where
+capital per effective worker does not change, i.e., $k'(t) = 0$.\
+From the ODE:
 
 $$
 k'(t) = s\,k^\alpha - (\delta + n + g) k = 0
-$$  
+$$
 
-Solving for $k^*$ gives the **stable steady point**:  
+Solving for $k^*$ gives the **stable steady point**:
 
 $$
 k^* = \left(\frac{s}{\delta + n + g}\right)^{\frac{1}{1-\alpha}}
-$$  
+$$
 
-This represents the long-term level of capital per effective worker that the economy converges to.
+This represents the long-term level of capital per effective worker that
+the economy converges to.
 
-**Stability check of \(k^*\)**
+**Stability check of** $k^*$
 
-Let
-\[
+Let $$
 F(k)=s k^\alpha - (\delta+n+g)k,
-\]
-so the steady state \(k^*\) satisfies
-\[
+$$ so the steady state $k^*$ satisfies $$
 s(k^*)^\alpha=(\delta+n+g)k^* \quad\Longrightarrow\quad s (k^*)^{\alpha-1}=\delta+n+g.
-\]
-Differentiate:
-\[
+$$ Differentiate: $$
 F'(k)=s\alpha k^{\alpha-1} - (\delta+n+g).
-\]
-Evaluate at \(k^*\) and use the steady-state identity:
-\[
+$$ Evaluate at $k^*$ and use the steady-state identity: $$
 F'(k^*)=s\alpha (k^*)^{\alpha-1} - (\delta+n+g)
 =\alpha(\delta+n+g) - (\delta+n+g)
 =(\alpha-1)(\delta+n+g).
-\]
-Because \(0<\alpha<1\) and \(\delta+n+g>0\), we have \(F'(k^*)<0\). Hence \(k^*\) is a stable steady point. 
+$$ Because $0<\alpha<1$ and $\delta+n+g>0$, we have $F'(k^*)<0$. Hence
+$k^*$ is a stable steady point.
 
-Solving for $k^*$ gives the **stable steady point**:  
+Solving for $k^*$ gives the **stable steady point**:
 
 $$
 k^* = \left(\frac{s}{\delta + n + g}\right)^{\frac{1}{1-\alpha}}
-$$  
+$$
 
-This represents the long-term level of capital per effective worker that the economy converges to.
+This represents the long-term level of capital per effective worker that
+the economy converges to.
 
-Using the Canadian parameter values ($s=0.252$, $\delta+n+g=0.0885$, $\alpha=0.31$), we compute  
+Using the Canadian parameter values ($s=0.252$, $\delta+n+g=0.0885$,
+$\alpha=0.31$), we compute
 
-\[
+$$
 k^* = \left(\frac{0.252}{0.0885}\right)^{\tfrac{1}{1-0.31}} \approx 4.56.
-\]
+$$
 
-This means that, in the long run, the economy converges to about **4.56 units of capital per effective worker**.\
-At this point, investment exactly offsets depreciation, population growth, and technological progress, so $k(t)$ remains constant.
+This means that, in the long run, the economy converges to about **4.56
+units of capital per effective worker**.\
+At this point, investment exactly offsets depreciation, population
+growth, and technological progress, so $k(t)$ remains constant.
 
-
-Below, we illustrate the dynamics of $k(t)$ around the steady-state. The arrows indicate whether $k(t)$ increases or decreases, showing the **stability** of the steady point.
-\newline
+Below, we illustrate the dynamics of $k(t)$ around the steady-state. The
+arrows indicate whether $k(t)$ increases or decreases, showing the
+**stability** of the steady point. \newline
 
 ```{r fig.align= "center", fig.width=5.5, fig.height=3}
 # Steady-state calculation
@@ -317,18 +363,27 @@ ggplot(data.frame(k = k_vals_dyn, k_prime = k_deriv), aes(x = k, y = k_prime)) +
     text = element_text(size = 10, family = "Times"),
   )
 ```
+
 \
-From the dynamics plot, we can see that the steady state $k^*$ is **stable**.  
+From the dynamics plot, we can see that the steady state $k^*$ is
+**stable**.
 
-- **When $k < k^*$:** The curve lies above the $x$-axis, so $k'(t) > 0$. This means capital per effective worker increases over time, pushing the system back toward $k^*$.  
+-   **When** $k < k^*$: The curve lies above the $x$-axis, so
+    $k'(t) > 0$. This means capital per effective worker increases over
+    time, pushing the system back toward $k^*$.
 
-- **When $k > k^*$:** The curve lies below the $x$-axis, so $k'(t) < 0$. In this case, capital per effective worker decreases, again pulling the system back toward $k^*$.  
+-   **When** $k > k^*$: The curve lies below the $x$-axis, so
+    $k'(t) < 0$. In this case, capital per effective worker decreases,
+    again pulling the system back toward $k^*$.
 
-Thus, no matter whether the economy starts with “too little” or “too much” capital per effective worker, the dynamics naturally drive it back to the steady state.  
+Thus, no matter whether the economy starts with “too little” or “too
+much” capital per effective worker, the dynamics naturally drive it back
+to the steady state.
 
-Economically, this means the Solow-Swan model predicts **long-run convergence**: different initial conditions for $k(0)$ do not matter, since the economy eventually settles at the same steady-state capital stock per effective worker, determined solely by parameters $s$, $\alpha$, $\delta$, $n$, and $g$.
+Economically, this means the Solow-Swan model predicts **long-run
+convergence**: different initial conditions for $k(0)$ do not matter,
+since the economy eventually settles at the same steady-state capital
+stock per effective worker, determined solely by parameters $s$,
+$\alpha$, $\delta$, $n$, and $g$.
 
-
-
-
-
+# Works Cited
